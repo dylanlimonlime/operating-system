@@ -1,0 +1,212 @@
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ CHECKPOINT 1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+GDT
+    No bugs
+ 
+IDT
+    Assembly interrupt function not being called
+        When: 03/17/2020
+        Found by: Fawaz
+        Fixed by: Fawaz
+        Resolution: Realized that the function wasn't being declared as a
+                    function in the interrupt_invoc.h header file 
+                    (extern void common_interrupt -> extern void common_interrupt())
+
+PIC
+    Disable IRQ Enabled IRQ and Enable IRQ Disabled IRQ. 
+        When: 3/19/2020
+        Found by : Sanjay
+        Fixed by : Sanjay
+        Resolution: Replace the function names with each other to let Disable
+                    IRQ enable IRQ and Enable IRQ to disable IRQ
+
+RTC
+    Only one interrupt was coming in
+        When: 03/19/2020
+        Found by: Fawaz
+        Fixed by: Fawaz
+        Resolution: Needed to clear Register C after every interrupt even 
+                    though there’s no substantive data coming through.
+
+Keyboard
+    Keyboard only takes one char in and then crashes, not allowing any other key pressed
+        When: 3/19/2020
+        Found by: Sanjay
+        Fixed by: Sanjay
+        Resolution: Keyboard needs to be flushed first with an inb statement 
+                    before the next keypress can be acknowledged.
+    Keyboard echos out two chars, one that is correct and one that is incorrect
+        When: 3/20/2020
+        Found by: Sanjay
+        Fixed by: Sanjay
+        Resolution: Keyboard echos both a press and a depress. An if statement
+                    that checks for a depress simply returns the function and 
+                    doesn’t print it out to screen
+
+Paging
+    paging_init() causes segmentation fault and boot loop
+        When: 3/22/2020
+        Found by: Dylan
+        Fixed by: Nithin
+        Resolution: Page table was mapped incorrectly for video memory. Right
+                    shifted the index for the page table by 12 bits according
+                    to the proper offset.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ CHECKPOINT 2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+RTC Driver
+    rtc_write not updating frequency
+        When: 03/28/2020
+        Found by: Fawaz
+        Fixed by: Fawaz
+        Resolution: Removed static from rtc_frequency
+                    ‘static uint32_t rtc_freqeuncy’ -> ‘uint32_t rtc_frequency’
+
+TERMINAL
+    Keyboard won’t make capital letters when shift or caps lock is pressed
+        When: 3/24/20
+        Found by: Sanjay
+        Fixed by: Sanjay
+        Fix: Keyboard.c should have a CAPS boolean and a SHIFT boolean
+
+    Keyboard buffer won’t take enters or backspaces at 128th  bit
+        When: 3/25/20
+        Found by: Sanjay
+        Fixed by: Sanjay
+        Fix: Keyboard interrupt handler should have if function that checks to 
+             see if buffer index is at 127 index and allow only enters and 
+             backspaces then
+
+    Terminal keyboard buffer only took 127 characters instead of 128
+        When: 3/26/20
+        Found by: Sanjay
+        Fixed by: Sanjay
+        Fix: Keyboard should should reading and printing to screen when the 
+             buf_index is at 127, not 126
+
+FILESYSTEM
+    File_read does not pass in information from fd
+        When: 3/29/20
+        Found by: Dylan
+        Fixed by: Dylan
+        Fix: Scrapped use of fd and pcb for now. Instead uses global variable 
+             for file location and pass fd as filename. Must reimplement for CP3.
+
+    Read_data not dereferencing inode array properly. Causes file_read to fail.
+        When: 3/30/20
+        Found by: Dylan
+        Fixed by: Dylan
+        Fix: inode array was not initialized properly in filesys_init(). Needed
+             to be offset by size of boot_block, not by size of addr.
+
+    Large text file not printing to screen.
+        When: 3/30/20
+        Found by: Dylan
+        Fixed by: Dylan
+        Fix: Syntax issue.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ CHECKPOINT 3~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Execute:
+    General Protection Fault on iret for context switch
+        When: 4/12/2020
+        Found by: Fawaz
+        Fixed by: Fawaz and Sanjay
+        Fix: Moved esi to ebp at beginning of context switch
+    Page Fault on iret in system call assembly handler
+        When: 4/13/2020
+        Found by: Fawaz
+        Fixed by: Fawaz
+        Fix: Removed popal that wasn’t removed when pushal was removed earlier
+Read:
+    Commands not coming through
+        When: 4/13/2020
+        Found by: Fawaz
+        Fixed by: All
+        Fix: Updated terminal_read to actually use the buffer given
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ CHECKPOINT 4 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+CHECKPOINT 4 BUGS
+
+Directory entry read:
+    Directory entry read fails on ls
+        When: 4/13/2020
+        Found by: Fawaz
+        Fixed by: Dylan
+        Fix: strlen returns a 0 indexed length. Must add 1 tio the return value
+
+    Large file name is truncated
+        When: 4/17/2020
+        Found by: Dylan
+        Fixed by: Dylan
+        Fix: strlen returns a 0 indexed length. Must add 1 to the return value
+
+File read:
+    File read fails on cat ls
+        When: 4/15/2020
+        Found by: Sanjay & Fawaz
+        Fixed by: Dylan
+        Fix: Changed local structs to pointers. Changed how offset is indexed 
+             for data blocks.
+
+
+Get_args:
+    Argument was not being copied into buffer in getargs function
+        When: 4/16/2020
+        Found by: Sanjay
+        Fixed by: Sanjay
+        Fix: Moved arguments to pcb->args within execute call
+
+    Argument was incorrect in get_args
+        When: 4/16/2020
+        Found by: Sanjay
+        Fixed by: Sanjay
+        Fix: Parse out the initial spaces before reaching the argument
+
+Halt:
+    Halt was not returning to original shell
+        When: 4/18/2020
+        Found by: Sanjay and Fawaz
+        Fixed by: Fawaz
+        Fix: Use the ebp of the child pcb, not the parent
+
+    Halt did not appropriately close files after deleting current process
+        When: 4/17/2020
+        Found by: Fawaz
+        Fixed by: Sanjay and Nithin
+        Fix: Instead of using file_close() function, used close() call to
+             appropriately close files pertaining to current process
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ CHECKPOINT 5 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Multiple Terminals:
+    None of the shells would vertically scroll correctly
+        Date: 4/27/2020
+        Found by: Sanjay
+        Fixed by: Sanjay
+        Solution: Updated vertical scroll to not take screen x or screen y as inputs, and thus only used mem addresses. Also made a vertical scroll function specifically for current shell only.   
+    Current shell wouldn’t always be printed to when typing to shell
+        Date: 4/26/2020
+        Found by: Sanjay
+        Fixed by: Sanjay
+        Solution: Create a seperate putc function that only works for keyboard echo. This putc only prints to the current screen.
+    Printing was quite slow especially for pingpong and counter
+        Date: 4/29/2020
+        Found by: Sanjay
+        Fixed by: Sanjay
+        Solution: Updated code to run as little as possible for every print and also made edges runs like vertical scroll more efficient.
+    
+Scheduling:
+    Page fault on invalid shell command
+        Date: 4/27/2020
+        Found by: Fawaz
+        Fixed by: Fawaz
+        Solution: Have all fail conditions in execute clear the current PCB’s newly assigned child_pcb pointer
+    Page fault on “random” scheduler() calls
+        Data: 4/26/2020
+        Found by: Fawaz
+        Fixed by: Fawaz
+        Solution: Clear parent pcb’s child_pcb pointer when halting, as well as preemptively clear pcb fields in pcb_init()
+PIT:
+    Multiple page faults immediately upon booting OS
+        Date: 4/25/2020
+        Found by: Nithin and Dylan
+        Fixed by: Nithin and Dylan
+        Solution: Set up interrupt gate for pit appropriately in IDT and then send an EOI signal from pit handler after interrupt was handled
+
